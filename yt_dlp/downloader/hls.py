@@ -152,6 +152,9 @@ class HlsFD(FragmentFD):
         format_index = info_dict.get('format_index')
         extra_query = None
         extra_param_to_segment_url = info_dict.get('extra_param_to_segment_url')
+        url_must_not_match = info_dict.get('url_must_not_match')
+        url_must_match = info_dict.get('url_must_match')
+
         if extra_param_to_segment_url:
             extra_query = urllib.parse.parse_qs(extra_param_to_segment_url)
         i = 0
@@ -182,6 +185,10 @@ class HlsFD(FragmentFD):
                     frag_url = urljoin(man_url, line)
                     if extra_query:
                         frag_url = update_url_query(frag_url, extra_query)
+                    if url_must_match and not re.search(url_must_match, frag_url):
+                        continue
+                    if url_must_not_match and re.search(url_must_not_match, frag_url):
+                        continue
 
                     fragments.append({
                         'frag_index': frag_index,
@@ -204,6 +211,10 @@ class HlsFD(FragmentFD):
                     frag_url = urljoin(man_url, map_info.get('URI'))
                     if extra_query:
                         frag_url = update_url_query(frag_url, extra_query)
+                    if url_must_match and not re.search(url_must_match, frag_url):
+                        continue
+                    if url_must_not_match and re.search(url_must_not_match, frag_url):
+                        continue
 
                     if map_info.get('BYTERANGE'):
                         splitted_byte_range = map_info.get('BYTERANGE').split('@')

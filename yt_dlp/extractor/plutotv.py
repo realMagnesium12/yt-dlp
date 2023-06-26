@@ -132,7 +132,7 @@ class PlutoTVIE(InfoExtractor):
             self.report_warning('Unable to find ad-free formats')
         return formats, subtitles
 
-    def _get_video_info(self, video_json, slug, series_name=None):
+    def _get_video_info(self, video_json, slug, info_slug=None, series_name=None):
         video_id = video_json.get('_id', slug)
         formats, subtitles = [], {}
         for video_url in try_get(video_json, lambda x: x['stitched']['urls'], list) or []:
@@ -154,7 +154,14 @@ class PlutoTVIE(InfoExtractor):
             'title': video_json.get('name'),
             'description': video_json.get('description'),
             'duration': float_or_none(video_json.get('duration'), scale=1000),
+            'url_must_not_match': '.*ad/creative/.*',
         }
+
+        if info_slug:
+            must_match = info_slug.replace('-', '.').replace(' ', '.').replace('_', '.')
+            info.update({
+                'url_must_match': f"(?i).*{must_match}.*"
+            })
         if series_name:
             info.update({
                 'series': series_name,
@@ -180,7 +187,8 @@ class PlutoTVIE(InfoExtractor):
                 for episode in season['episodes']:
                     if episode_slug is not None and episode_slug != episode.get('slug'):
                         continue
-                    videos.append(self._get_video_info(episode, episode_slug, series_name))
+                    videos.append(self._get_video_info(episode, slug=episode_slug,
+                                                       info_slug=info_slug, series_name=series_name))
             if not videos:
                 raise ExtractorError('Failed to find any videos to extract')
             if episode_slug is not None and len(videos) == 1:
@@ -191,4 +199,4 @@ class PlutoTVIE(InfoExtractor):
             return self.playlist_result(videos,
                                         playlist_id=video_json.get('_id', info_slug),
                                         playlist_title=playlist_title)
-        return self._get_video_info(video_json, info_slug)
+        return self._get_video_info(video_json, slug=info_slug)
